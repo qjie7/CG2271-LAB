@@ -1,9 +1,9 @@
 #include "MKL25Z4.h"                    // Device header
 
-#define RED_LED  										18 // PortB Pin 18 
-#define GREEN_LED 									19 // PortB Pin 19 
-#define BLUE_LED 										1 // PortD Pin 1 
-#define MASK(x) 										(1 << (x))
+#define RED_LED  									18 		// PortB Pin 18 
+#define GREEN_LED 									19 		// PortB Pin 19 
+#define BLUE_LED 									1 		// PortD Pin 1 
+#define MASK(x) 									(1 << (x))
 #define OFFMASK(x)									(0 << (x))
 
 typedef enum {
@@ -49,7 +49,7 @@ int main(void) {
 	while(1) {
 		
 		counter++;
-		
+
 		if(counter > 0x80000) {		
 			reset_counter();
 			led_control(led_counter);
@@ -58,44 +58,44 @@ int main(void) {
 	
 }
 
-	void led_show(colour_t colour) {
-			if (colour == Red) {  
-				PTB->PDOR = MASK(GREEN_LED); // Set Green LED bit to 1 to off it since the LED are active low
-				PTD->PDOR = MASK(BLUE_LED);  // Set Blue LED bit to 1 to off it 
-				
-			} else if (colour == Green) { 
-				PTB->PDOR = MASK(RED_LED);
-			} else {
-				PTB->PDOR |= MASK(GREEN_LED); //0011
-				PTD->PDOR = OFFMASK(BLUE_LED); // On Blue LED
-			}
+void led_show(colour_t colour) {
+	if (colour == Red) {  
+		PTB->PDOR = MASK(GREEN_LED); // Set Green LED bit to 1 to off it since the LED are active low
+		PTD->PDOR = MASK(BLUE_LED);  // Set Blue LED bit to 1 to off it 
+
+	} else if (colour == Green) { 
+		PTB->PDOR = MASK(RED_LED);
+	} else {
+		PTB->PDOR |= MASK(GREEN_LED); //0011
+		PTD->PDOR = OFFMASK(BLUE_LED); // On Blue LED
 	}
+}
 	
-	void reset_counter (void) {
-		counter = 0;
-		led_counter++;
-		if(led_counter > 2) {
-			led_counter = 0;
-		}
+void reset_counter (void) {
+	counter = 0;
+	led_counter++;
+	if(led_counter > 2) {
+		led_counter = 0;
 	}
-	
-	void led_control (int led_counter) {
-		
-		switch (led_counter) {
-				
-				case 0:
-					led_show(Red);
-					break;
-				
-				case 1:
-					led_show(Green);
-					break;
-				
-				case 2:
-					led_show(Blue);
-					break;
-		}
+}
+
+void led_control (int led_counter) {
+
+	switch (led_counter) {
+
+		case 0:
+			led_show(Red);
+			break;
+
+		case 1:
+			led_show(Green);
+			break;
+
+		case 2:
+			led_show(Blue);
+			break;
 	}
+}
 
 
  
