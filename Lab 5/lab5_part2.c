@@ -9,12 +9,12 @@
 #define BIT0_MASK(x)(x & 0x01)
 
 #define RED_LED  										18 // PortB Pin 18 
-#define GREEN_LED 									19 // PortB Pin 19 
+#define GREEN_LED 										19 // PortB Pin 19 
 #define BLUE_LED 										1  // PortD Pin 1 
-#define LED_RED											2 //	0b00000010
+#define LED_RED											2  // 0b00000010
 
 #define MASK(x) 										(1 << (x))
-#define OFFMASK(x)									(0 << (x)) 
+#define OFFMASK(x)										(0 << (x)) 
 
 typedef enum {
 	
@@ -36,6 +36,10 @@ static void delay(volatile uint32_t nof) {
 void initUART2(uint32_t baud_rate){
 	
 	uint32_t divisor, bus_clock;
+	/*
+	 * Enable clock gating for serial communication, specifically for UART2 
+	 * and enable clock gating for PORT E as well
+	 */
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
 	
@@ -45,8 +49,17 @@ void initUART2(uint32_t baud_rate){
 	PORTE->PCR[UART_RX_PORTE23] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_RX_PORTE23] |= PORT_PCR_MUX(4);
 	
+	/*
+	 * Ensure Tx and Rx are disabled before configuration.
+	 * This is to ensure there are no other codes that can 
+	 * accidentally turn on the Tx and Rx before configuration is done
+	 */
 	UART2->C2 &= ~((UART_C2_TE_MASK) | (UART_C2_RE_MASK));
 	
+	/*
+	 * UART2 has fixed 16x oversampling. This is to improve noise immunity ,
+	 * hence better synchronization to incoming data.
+	 */
 	bus_clock = (DEFAULT_SYSTEM_CLOCK)/2;
 	divisor = bus_clock / (baud_rate * 16);
 	UART2->BDH = UART_BDH_SBR(divisor >> 8);
