@@ -1,15 +1,15 @@
 #include "MKL25Z4.h"                    // Device header
 
 #define RED_LED  										18 // PortB Pin 18 
-#define GREEN_LED 									19 // PortB Pin 19 
+#define GREEN_LED 										19 // PortB Pin 19 
 #define BLUE_LED 										1  // PortD Pin 1 
 #define SW_POS											6  // PORT D Pin 6
 #define DEBOUNCE										4
 
 #define MASK(x) 										(1 << (x))
-#define OFFMASK(x)									(0 << (x))
+#define OFFMASK(x)										(0 << (x))
 
-#define THRESHOLD 									90000
+#define THRESHOLD 										90000
 
 typedef enum {
 	
@@ -86,17 +86,17 @@ void led_control (int led_counter) {
 		
 	switch (led_counter) {
 			
-			case 0:
-				led_show(Red);
-				break;
-			
-			case 1:
-				led_show(Green);
-				break;
-			
-			case 2:
-				led_show(Blue);
-				break;
+		case 0:
+			led_show(Red);
+			break;
+
+		case 1:
+			led_show(Green);
+			break;
+
+		case 2:
+			led_show(Blue);
+			break;
 	}
 }
 	
