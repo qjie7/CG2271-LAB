@@ -258,12 +258,12 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   Object Name
 
-       350         38          0          8          0       7445   myblinky.o
-        56         30        192          0        256        836   startup_mkl25z4.o
-       440         42          0          4          0       1547   system_mkl25z4.o
+       350         38          0          8          0       7473   myblinky.o
+        56         30        192          0        256        844   startup_mkl25z4.o
+       440         42          0          4          0       1559   system_mkl25z4.o
 
     ----------------------------------------------------------------------
-       846        110        228         12        260       9828   Object Totals
+       846        110        228         12        260       9876   Object Totals
          0          0         32          0          0          0   (incl. Generated)
          0          0          4          0          4          0   (incl. Padding)
 
@@ -303,8 +303,8 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-       976        126        228         12        260       9900   Grand Totals
-       976        126        228         12        260       9900   ELF Image Totals
+       976        126        228         12        260       9948   Grand Totals
+       976        126        228         12        260       9948   ELF Image Totals
        976        126        228         12          0          0   ROM Totals
 
 ==============================================================================

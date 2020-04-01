@@ -15,6 +15,7 @@ void initPWM(void)
 {
 	//Enable clock to supply power to Port B
 	SIM_SCGC5 |= SIM_SCGC5_PORTB_MASK;
+
 	
 	//Configure MUX settings to make PTB0_Pin and PTB1_Pin as PWM
 	PORTB->PCR[PTB0_PIN] &= ~PORT_PCR_MUX_MASK;
@@ -68,13 +69,23 @@ int main(void) {
 	while(1) {
 		play(C_NOTE);
 		delay(0xAFFFF);
+		delay(0xAFFFF);
+		delay(0xAFFFF);
 		play(C_NOTE);
 		delay(0xAFFFF);
-		play(G_NOTE);
+		delay(0xAFFFF);
 		delay(0xAFFFF);
 		play(G_NOTE);
+		delay(0xAFFFF);
+		delay(0xAFFFF);
+		delay(0xAFFFF);
+		play(G_NOTE);
+		delay(0xAFFFF);
+		delay(0xAFFFF);
 		delay(0xAFFFF);
 		play(A_NOTE);
+		delay(0xAFFFF);
+		delay(0xAFFFF);
 		delay(0xAFFFF);
 		play(A_NOTE);
 		delay(0xAFFFF);
