@@ -4,7 +4,7 @@
  
 #include "RTE_Components.h"
 #include  CMSIS_device_header
-#include "cmsis_os2.h"
+#include "cmsis_os2.h"  
 #include <stdbool.h>
 
 //For DRV8833 #1 
@@ -29,8 +29,8 @@
 #define PTD2_PIN 										2
 
 // For Red LED
+#define PTB8_PIN										8
 
-#define PTA16_PIN										9
 
 #define PTC8_PIN										8
 #define PTC9_PIN										9
@@ -536,8 +536,8 @@ void initGPIO(void) {
 	PORTD->PCR[PTD2_PIN] &= ~PORT_PCR_MUX_MASK;  
 	PORTD->PCR[PTD2_PIN] |= PORT_PCR_MUX(1);
 	
-	PORTA->PCR[PTA16_PIN] &= ~PORT_PCR_MUX_MASK;  
-	PORTA->PCR[PTA16_PIN] |= PORT_PCR_MUX(1);
+	PORTB->PCR[PTB8_PIN] &= ~PORT_PCR_MUX_MASK;  
+	PORTB->PCR[PTB8_PIN] |= PORT_PCR_MUX(1);
 	
 	PORTC->PCR[PTC16_PIN] &= ~PORT_PCR_MUX_MASK;  
 	PORTC->PCR[PTC16_PIN] |= PORT_PCR_MUX(1);
@@ -548,8 +548,8 @@ void initGPIO(void) {
 	
 	
 	// Set Data Direction Registers for PortB and PortD  
-	PTA->PDDR |= (MASK(PTA5_PIN) | MASK(PTA13_PIN) | MASK(PTA16_PIN));
-	PTB->PDDR |= (MASK(PTB0_PIN) | MASK(PTB2_PIN));  
+	PTA->PDDR |= (MASK(PTA5_PIN) | MASK(PTA13_PIN));
+	PTB->PDDR |= (MASK(PTB0_PIN) | MASK(PTB2_PIN) | MASK(PTB8_PIN));    
 	PTC->PDDR |= (MASK(PTC9_PIN) | MASK(PTC12_PIN) | MASK(PTC13_PIN) | MASK(PTC16_PIN) | MASK(PTC17_PIN));
 	PTD->PDDR |= (MASK(PTD5_PIN) | MASK(PTD0_PIN) | MASK(PTD2_PIN));
 	
@@ -569,7 +569,7 @@ void initGPIO(void) {
 	PTD->PDOR &= ~MASK(PTD5_PIN);
 	PTD->PDOR &= ~MASK(PTD0_PIN);
 	PTD->PDOR &= ~MASK(PTD2_PIN);
-	PTA->PDOR &= ~MASK(PTA16_PIN);
+	PTB->PDOR &= ~MASK(PTB8_PIN);
 	
 }
 
@@ -783,14 +783,14 @@ void double_flash_green_led(void) {
 
 void red_led_500ms(void) {
 	
-	PTA->PTOR |= MASK(PTA16_PIN);
-	delay(1000000 );
+	PTB->PTOR |= MASK(PTB8_PIN);
+	delay(1000000);
 	
 }
 
 void red_led_250ms(void) {
 	
-	PTA->PTOR |= MASK(PTA16_PIN);
+	PTB->PTOR |= MASK(PTB8_PIN);
 	delay(100000000);
 	
 }
@@ -855,6 +855,11 @@ int main (void) {
 	
 	initPWM();
 	initGPIO();
+	while(1){
+		running_led();
+		red_led_500ms();
+	}
+	//running_led();
 	//double_flash_green_led(); 
 	//led_control();
 	//play_song();
@@ -864,7 +869,7 @@ int main (void) {
 //	myMutex = osMutexNew(NULL);
 //  osThreadNew(play_song, NULL, NULL);    // Create application main thread
 //  osKernelStart();                      // Start thread execution
-	initUART2(BAUD_RATE);
+	//initUART2(BAUD_RATE);
 	//tMotorControl(Stop, current_dutycycle, false);
-  for (;;) {}
+  //for (;;) {}
 }
