@@ -45,6 +45,21 @@ void initMotorGPIO(int pin, char port, bool state) {
 			}
 			
 			break;
+			
+		case 'E':
+	
+			PORTE->PCR[pin] &= ~PORT_PCR_MUX_MASK;  
+			PORTE->PCR[pin] |= PORT_PCR_MUX(1);
+		
+			PTE->PDDR |=  MASK(pin);
+		
+			if (state) {
+				PTE->PDOR |= MASK(pin);
+			}else {
+				PTE->PDOR &= ~MASK(pin);
+			}
+			
+			break;
 	}
 }
 
@@ -58,7 +73,7 @@ void initMotorPWM(int pin, char port) {
 			PORTA->PCR[pin] |= PORT_PCR_MUX(3);
 		
 			TPM0->MOD = 7500;
-			TPM0_C1V = 2250;
+			//TPM0_C1V = 2250;
 			TPM0_C2V = 2250;
 
 			break;
@@ -86,6 +101,16 @@ void initMotorPWM(int pin, char port) {
 			TPM0->MOD = 7500;
 			TPM0_C4V = 2250;
 			TPM0_C5V = 2250;
+			
+			break;
+		
+		case 'E':
+		
+			PORTE->PCR[pin] &= ~PORT_PCR_MUX_MASK;  
+			PORTE->PCR[pin] |= PORT_PCR_MUX(3);
+		
+			TPM0->MOD = 7500;
+			TPM0_C3V = 2250;
 			
 			break;
 	}
@@ -118,7 +143,7 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 		
 		case MoveForward:
 			// FrontLeftWheel (Move Forward)
-			initMotorGPIO(PTA4_PIN, 'A', false);
+			initMotorGPIO(PTE30_PIN, 'E', false);
 			initMotorPWM(PTA5_PIN, 'A');
 		
 			// FrontRightWheel (Move Forward)
@@ -139,7 +164,7 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 			
 			// FrontLeftWheel (Move Backward)
 			initMotorGPIO(PTA5_PIN, 'A', false);
-			initMotorPWM(PTA4_PIN, 'A');
+			initMotorPWM(PTE30_PIN, 'E');
 		
 			// FrontRightWheel (Move Backward)
 			initMotorGPIO(PTB2_PIN, 'B', false);
@@ -167,7 +192,7 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 		
 			// FrontLeftWheel (Move Backward)
 			initMotorGPIO(PTA5_PIN, 'A', false);
-			initMotorPWM(PTA4_PIN, 'A');
+			initMotorPWM(PTE30_PIN, 'E');
 		
 			// BackLeftWheel (Move Backward)
 			initMotorGPIO(PTC9_PIN, 'C', false);
@@ -178,7 +203,7 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 		case TurnRight:
 			
 			// FrontLeftWheel (Move Forward)
-			initMotorGPIO(PTA4_PIN, 'A', false);
+			initMotorGPIO(PTE30_PIN, 'E', false);
 			initMotorPWM(PTA5_PIN, 'A');
 		
 			// BackLeftWheel (Move Forward)
@@ -198,7 +223,7 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 		default:
 			
 			// Stop ALL wheels from rotating
-			initMotorGPIO(PTA4_PIN, 'A', true);
+			initMotorGPIO(PTE30_PIN, 'E', true);
 			initMotorGPIO(PTA5_PIN, 'A', true);
 			
 			initMotorGPIO(PTB0_PIN, 'B', true);
