@@ -1,7 +1,3 @@
-/*----------------------------------------------------------------------------
- * CMSIS-RTOS 'main' function template
- *---------------------------------------------------------------------------*/
- 
 #include "RTE_Components.h"
 #include  CMSIS_device_header
 #include "cmsis_os2.h"  
@@ -51,9 +47,9 @@
 
 
 
-const osThreadAttr_t thread_attr = {
-	.priority = osPriorityNormal1 
-};
+//const osThreadAttr_t thread_attr = {
+//	.priority = osPriorityNormal1 
+//};
 
 // Type definition 
 typedef enum {
@@ -112,11 +108,6 @@ typedef enum {
 	C5 = 523
 }Note;
 
-typedef struct {
-	uint8_t cmd;
-	uint8_t data;
-}myDataPacket;
-
 // Functions declaration
 void initMotorGPIO(int pin, char port, bool state);
 void initMotorPWM(int pin, char port);
@@ -132,19 +123,12 @@ void red_led_500ms(void);
 void red_led_250ms(void);
 
 void tMotorControl(Movement movement, float duty_cycle, bool update);
-void tBrain(void *argument);
+void tBrain(int command);
 void tLED (void);
 void tAudio (void);
-void Serial_ISR(void);
 
 // Global Variables
- osMutexId_t myMutex;
- osEventFlagsId_t tBrain_flag;
- 
-
-volatile int debug = 0;
-
-volatile int command; // serial command (get from BT06)
+osMutexId_t myMutex;
 
 volatile float current_duty_cycle = 0.5f;
 volatile Movement current_movement = Stop;
@@ -573,9 +557,7 @@ void initGPIO(void) {
 }
 
  
-/*----------------------------------------------------------------------------
- * Application main thread
- *---------------------------------------------------------------------------*/
+
 //void motor_control_thread(void *argument) {
 // 
 //  // ...
@@ -623,61 +605,40 @@ void initGPIO(void) {
 
 
 
-void tBrain(void *argument) {
-	
-	for(;;) {
-		
-		osEventFlagsWait(tBrain_flag, 0x0001, osFlagsWaitAny, osWaitForever);
-		
-		if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
-			debug++;
-			osDelay(1000);
-			return;
-		}
-		
-		if (command >= LOWERCOMMANDLIMIT && command < 11) { // duty_cycle control
-			set_speed(command / 10.0f, true);
-			debug++;
-			osDelay(1000);
-			
-		} else if (command == 11) {
-			debug++;
-				tMotorControl(MoveForward, current_duty_cycle, true);
-			osDelay(1000);
-			
-
-		} else if (command == 12) { 
-			debug++;
-				tMotorControl(MoveBackward, current_duty_cycle, true);
-			osDelay(1000);
-				
-
-		} else if (command == 13) { 
-			debug++;
-				tMotorControl(TurnRight, current_duty_cycle, true);
-			osDelay(1000);
-			
-			
-		} else if (command == 14) {
-			debug++;
-				tMotorControl(TurnLeft, current_duty_cycle, true);
-			osDelay(1000);
-			
-		} 
-		else {
-			debug++;
-			tMotorControl(Stop, current_duty_cycle, false);
-			osDelay(1000);
-
-		}
-		
+void tBrain(int command) {
+	if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
+		//tLED();
+		return;
 	}
+	
+	if (command >= LOWERCOMMANDLIMIT && command < 11) { // duty_cycle control
+		set_speed(command / 10.0f, true);
+		//tLED();
 
+	} else if (command == 11) {
+			tMotorControl(MoveForward, current_duty_cycle, true);
+			//tLED();
+
+	} else if (command == 12) { 
+			tMotorControl(MoveBackward, current_duty_cycle, true);
+			//tLED();
+
+	} else if (command == 13) { 
+			tMotorControl(TurnRight, current_duty_cycle, true);
+			//tLED();
+		
+	} else if (command == 14) {
+			tMotorControl(TurnLeft, current_duty_cycle, true);
+			
+			//tLED();
+
+	} 
+	else {
+		tMotorControl(Stop, current_duty_cycle, false);
+		//tLED();
+	}
 }
 
-/*----------------------------------------------------------------------------
- * Red LED and Green LED Code 
- *---------------------------------------------------------------------------*/
 
 void running_green_led(void) {
 	if (led_on_id > 7) {
@@ -796,9 +757,7 @@ void tLED (void) {
 	
 }
 
-/*----------------------------------------------------------------------------
- * Buzzer Code 
- *---------------------------------------------------------------------------*/
+
 void set_buzzer_frequency(int frequency) {
 	TPM0->MOD = (int)(48000000.0 / (128.0 * frequency));
 	TPM0_C3V = TPM0->MOD - 1;
@@ -816,40 +775,37 @@ void play_note(Note note, NoteLength length, int bpm) {
 	//delay(0x8000);
 }
 
-void play_song(void *argument, Note* notes) {
-	
-	play_note(C4, MEDIUM, 240);
-	counter++;
-	play_note(D4, MEDIUM, 240);
-	counter++;
-	play_note(E4, MEDIUM, 240); 
-	counter++;
-	play_note(F4, MEDIUM, 240);
-	counter++;
-	play_note(G4, MEDIUM, 240);
-	counter++;
-	play_note(A4, MEDIUM, 240);
-	counter++;
-	play_note(B4, MEDIUM, 240);
-}
+//void play_song(void argument, Note notes) {
+//	
+//	play_note(C4, MEDIUM, 240);
+//	counter++;
+//	play_note(D4, MEDIUM, 240);
+//	counter++;
+//	play_note(E4, MEDIUM, 240); 
+//	counter++;
+//	play_note(F4, MEDIUM, 240);
+//	counter++;
+//	play_note(G4, MEDIUM, 240);
+//	counter++;
+//	play_note(A4, MEDIUM, 240);
+//	counter++;
+//	play_note(B4, MEDIUM, 240);
+//}
 
 void tAudio (void) {
 }
 
 /* UART2 Receive Poll*/
-void Serial_ISR(void) {
+void UART2_Receive_Poll(void) {
 		
 	if((UART2->S1 & UART_S1_RDRF_MASK)) {
-		command = UART2->D;
-		osEventFlagsSet(tBrain_flag, 0x0001);
-		debug++;
-		osDelay(1000);
+		tBrain(UART2->D);
 	}
 }
  
 void UART2_IRQHandler(void){
 	NVIC_ClearPendingIRQ(UART2_IRQn);
-	Serial_ISR();
+	UART2_Receive_Poll();
 }
 
 
@@ -862,11 +818,18 @@ int main (void) {
 	
 	initPWM();
 	initGPIO();
-	initUART2(BAUD_RATE);
-	//tMotorControl(Stop, current_duty_cycle, false);
-  osKernelInitialize();                 // Initialize CMSIS-RTOS
+//	while(1){
+//		running_green_led();
+//		red_led_500ms();
+//	}
+
 	
-	tBrain_flag = osEventFlagsNew(NULL);
-  osKernelStart();                      // Start thread execution
+//  osKernelInitialize();                 // Initialize CMSIS-RTOS
+//	myMutex = osMutexNew(NULL);
+//  osThreadNew(play_song, NULL, NULL);    // Create application main thread
+//  osKernelStart();                      // Start thread execution
+	initUART2(BAUD_RATE);
+	tMotorControl(Stop, current_duty_cycle, false);
   for (;;) {}
 }
+
