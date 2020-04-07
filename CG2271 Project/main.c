@@ -1,5 +1,11 @@
 #include "myheader.h"
 
+volatile osSemaphoreId_t mySemMoveForward;
+volatile osSemaphoreId_t mySemMoveBackward;
+osMutexId_t myMutex;
+volatile int debug = 0;
+
+volatile int debug2 = 0;
 void initMotorGPIO(int pin, char port, bool state) {
 	
 	switch (port) {
@@ -275,10 +281,19 @@ void serial_decoder(int command) {
 
 /* UART2 Receive Poll*/
 void Serial_ISR(void) {
+	
+		if((UART2->S1 & UART_S1_RDRF_MASK)) {	
+			if (UART2->D == 11) {
+				debug++;
+				osSemaphoreRelease(mySemMoveForward);
+			} else if(UART2->D == 12) {
+				debug++;
+				osSemaphoreRelease(mySemMoveBackward);
+			}
+	
+		}
 		
-	if((UART2->S1 & UART_S1_RDRF_MASK)) {
-		serial_decoder(UART2->D);
-	}
+
 }
  
 void UART2_IRQHandler(void){
@@ -286,6 +301,47 @@ void UART2_IRQHandler(void){
 	Serial_ISR();
 }
 
+void move_forward_thread(void *argument) {
+	for(;;){
+		
+		osSemaphoreAcquire(mySemMoveForward, osWaitForever);
+		//osMutexAcquire(myMutex, osWaitForever);
+		debug2++;
+		motor_control(MoveForward, current_duty_cycle, true);
+		osDelay(1000);
+		motor_control(MoveForward, current_duty_cycle, true);
+		osDelay(1000);
+		
+		
+	}
+}
+
+void move_backward_thread(void *argument) {
+	for(;;){
+		
+		osSemaphoreAcquire(mySemMoveBackward, osWaitForever);
+		//osMutexAcquire(myMutex, osWaitForever);
+		debug2++;
+		motor_control(MoveBackward, current_duty_cycle, true);
+		osDelay(1000);
+		motor_control(MoveBackward, current_duty_cycle, true);
+		osDelay(1000);
+		
+		
+	}
+}
+
+//void motor_run_thread (void *argument) {
+//	osMutexAcquire(myMutex, osWaitForever);
+//	debug2++;
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	motor_control(MoveForward, current_duty_cycle, true);
+//	osMutexRelease(myMutex);
+//}
 
 
  
@@ -294,15 +350,23 @@ int main (void) {
   // System Initialization
   SystemCoreClockUpdate();
 	
+	
 	initPWM();
 	initGPIO();
 	initUART2(BAUD_RATE);
-	motor_control(Stop, current_duty_cycle, false);
+	//motor_control(Stop, current_duty_cycle, false);
 	
-//  osKernelInitialize();                 // Initialize CMSIS-RTOS
-//  osThreadNew(play_song, NULL, NULL);    // Create application main thread
-//  osKernelStart();                      // Start thread execution
-
- // for (;;) {}
+  osKernelInitialize();                 // Initialize CMSIS-RTOS
+	//myMutex = osMutexNew(NULL);
+	mySemMoveForward = osSemaphoreNew(1, 0, NULL);
+	mySemMoveBackward = osSemaphoreNew(1, 0, NULL);
+	//osThreadNew(move_forward_thread, NULL, NULL);
+	
+	osThreadNew(move_forward_thread, NULL, NULL);
+	osThreadNew(move_backward_thread, NULL, NULL);
+  
+  osKernelStart();                      // Start thread execution
+	
+  for (;;) {}
 }
 

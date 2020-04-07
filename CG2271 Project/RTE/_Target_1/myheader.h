@@ -79,7 +79,6 @@ void serial_decoder(int command);
 void Serial_ISR(void);
 
 // Global Variables
-osMutexId_t myMutex;
 
 volatile float current_duty_cycle = 0.5f;
 volatile Movement current_movement = Stop;
@@ -96,27 +95,33 @@ volatile int led_on_id = 0;
 	}
 }
 
-void initUART2(uint32_t baud_rate) {
+void initUART2(uint32_t baud_rate){
 	
 	uint32_t divisor, bus_clock;
-	
-	//Enable clock gating for serial communication, specifically for UART2 and enable clock gating for PORT E as well
+	/*
+	 * Enable clock gating for serial communication, specifically for UART2 
+	 * and enable clock gating for PORT E as well
+	 */
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
 	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
 	
-	//PORTE22 is not in use for this project
 	PORTE->PCR[UART_TX_PORTE22] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_TX_PORTE22] |= PORT_PCR_MUX(4);
 	
 	PORTE->PCR[UART_RX_PORTE23] &= ~PORT_PCR_MUX_MASK;
 	PORTE->PCR[UART_RX_PORTE23] |= PORT_PCR_MUX(4);
 	
+	/*
+	 * Ensure Tx and Rx are disabled before configuration.
+	 * This is to ensure there are no other codes that can 
+	 * accidentally turn on the Tx and Rx before configuration is done
+	 */
+	UART2->C2 &= ~ UART_C2_RE_MASK;
 	
-	// Ensure Tx and Rx are disabled before configuration. This is to ensure there are no other codes that can accidentally turn on the Tx and Rx before configuration is done.
-	UART2->C2 &= ~((UART_C2_TE_MASK) | (UART_C2_RE_MASK));
-	
-	
-	// UART2 has fixed 16x oversampling. This is to improve noise immunity, hence better synchronization to incoming data. 
+	/*
+	 * UART2 has fixed 16x oversampling. This is to improve noise immunity ,
+	 * hence better synchronization to incoming data.
+	 */
 	bus_clock = (DEFAULT_SYSTEM_CLOCK)/2;
 	divisor = bus_clock / (baud_rate * 16);
 	UART2->BDH = UART_BDH_SBR(divisor >> 8);
@@ -126,13 +131,13 @@ void initUART2(uint32_t baud_rate) {
 	UART2->S2 = 0;
 	UART2->C3 = 0;
 	
-	UART2->C2 |= ((UART_C2_TE_MASK) | (UART_C2_RE_MASK));
+	UART2->C2 |= (UART_C2_RE_MASK);
 
-	NVIC_SetPriority(UART2_IRQn, UART2_INT_PRIO);  // Initialise of the interrupt must put at last part of the init
+	NVIC_SetPriority(UART2_IRQn, 128);  // Initialise of the interrupt must put at last part of the init
 	NVIC_ClearPendingIRQ(UART2_IRQn);
 	NVIC_EnableIRQ(UART2_IRQn);
 	
-	UART2->C2 |= UART_C2_TIE_MASK | UART_C2_RIE_MASK;
+	UART2->C2 |= UART_C2_RIE_MASK;
 	UART2->C2 |= UART_C2_RIE_MASK;
 }
 
