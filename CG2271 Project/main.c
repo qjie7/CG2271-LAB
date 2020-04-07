@@ -51,9 +51,9 @@
 
 
 
-//const osThreadAttr_t thread_attr = {
-//	.priority = osPriorityNormal1 
-//};
+const osThreadAttr_t thread_attr = {
+	.priority = osPriorityNormal1 
+};
 
 // Type definition 
 typedef enum {
@@ -112,6 +112,11 @@ typedef enum {
 	C5 = 523
 }Note;
 
+typedef struct {
+	uint8_t cmd;
+	uint8_t data;
+}myDataPacket;
+
 // Functions declaration
 void initMotorGPIO(int pin, char port, bool state);
 void initMotorPWM(int pin, char port);
@@ -127,12 +132,19 @@ void red_led_500ms(void);
 void red_led_250ms(void);
 
 void tMotorControl(Movement movement, float duty_cycle, bool update);
-void tBrain(int command);
+void tBrain(void *argument);
 void tLED (void);
 void tAudio (void);
+void Serial_ISR(void);
 
 // Global Variables
-osMutexId_t myMutex;
+ osMutexId_t myMutex;
+ osEventFlagsId_t tBrain_flag;
+ 
+
+volatile int debug = 0;
+
+volatile int command; // serial command (get from BT06)
 
 volatile float current_duty_cycle = 0.5f;
 volatile Movement current_movement = Stop;
@@ -611,38 +623,56 @@ void initGPIO(void) {
 
 
 
-void tBrain(int command) {
-	if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
-		//tLED();
-		return;
-	}
+void tBrain(void *argument) {
 	
-	if (command >= LOWERCOMMANDLIMIT && command < 11) { // duty_cycle control
-		set_speed(command / 10.0f, true);
-		//tLED();
-
-	} else if (command == 11) {
-			tMotorControl(MoveForward, current_duty_cycle, true);
-			//tLED();
-
-	} else if (command == 12) { 
-			tMotorControl(MoveBackward, current_duty_cycle, true);
-			//tLED();
-
-	} else if (command == 13) { 
-			tMotorControl(TurnRight, current_duty_cycle, true);
-			//tLED();
+	for(;;) {
 		
-	} else if (command == 14) {
-			tMotorControl(TurnLeft, current_duty_cycle, true);
+		osEventFlagsWait(tBrain_flag, 0x0001, osFlagsWaitAny, osWaitForever);
+		
+		if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
+			debug++;
+			osDelay(1000);
+			return;
+		}
+		
+		if (command >= LOWERCOMMANDLIMIT && command < 11) { // duty_cycle control
+			set_speed(command / 10.0f, true);
+			debug++;
+			osDelay(1000);
 			
-			//tLED();
+		} else if (command == 11) {
+			debug++;
+				tMotorControl(MoveForward, current_duty_cycle, true);
+			osDelay(1000);
+			
 
-	} 
-	else {
-		tMotorControl(Stop, current_duty_cycle, false);
-		//tLED();
+		} else if (command == 12) { 
+			debug++;
+				tMotorControl(MoveBackward, current_duty_cycle, true);
+			osDelay(1000);
+				
+
+		} else if (command == 13) { 
+			debug++;
+				tMotorControl(TurnRight, current_duty_cycle, true);
+			osDelay(1000);
+			
+			
+		} else if (command == 14) {
+			debug++;
+				tMotorControl(TurnLeft, current_duty_cycle, true);
+			osDelay(1000);
+			
+		} 
+		else {
+			debug++;
+			tMotorControl(Stop, current_duty_cycle, false);
+			osDelay(1000);
+
+		}
+		
 	}
+
 }
 
 /*----------------------------------------------------------------------------
@@ -807,16 +837,19 @@ void tAudio (void) {
 }
 
 /* UART2 Receive Poll*/
-void UART2_Receive_Poll(void) {
+void Serial_ISR(void) {
 		
 	if((UART2->S1 & UART_S1_RDRF_MASK)) {
-		tBrain(UART2->D);
+		command = UART2->D;
+		osEventFlagsSet(tBrain_flag, 0x0001);
+		debug++;
+		osDelay(1000);
 	}
 }
  
 void UART2_IRQHandler(void){
 	NVIC_ClearPendingIRQ(UART2_IRQn);
-	UART2_Receive_Poll();
+	Serial_ISR();
 }
 
 
@@ -829,17 +862,11 @@ int main (void) {
 	
 	initPWM();
 	initGPIO();
-//	while(1){
-//		running_green_led();
-//		red_led_500ms();
-//	}
-
-	
-//  osKernelInitialize();                 // Initialize CMSIS-RTOS
-//	myMutex = osMutexNew(NULL);
-//  osThreadNew(play_song, NULL, NULL);    // Create application main thread
-//  osKernelStart();                      // Start thread execution
 	initUART2(BAUD_RATE);
-	tMotorControl(Stop, current_duty_cycle, false);
+	//tMotorControl(Stop, current_duty_cycle, false);
+  osKernelInitialize();                 // Initialize CMSIS-RTOS
+	
+	tBrain_flag = osEventFlagsNew(NULL);
+  osKernelStart();                      // Start thread execution
   for (;;) {}
 }
