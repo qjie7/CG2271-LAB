@@ -1,4 +1,5 @@
 .\objects\main.o: main.c
+.\objects\main.o: .\RTE\_Target_1\myheader.h
 .\objects\main.o: .\RTE\_Target_1\RTE_Components.h
 .\objects\main.o: C:\Users\Qian Jie\AppData\Local\Arm\Packs\Keil\Kinetis_KLxx_DFP\1.15.0\Device\Include\MKL25Z4.h
 .\objects\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
