@@ -1,8 +1,17 @@
 #include "myheader.h"
 
-volatile osSemaphoreId_t mySemMoveForward;
-volatile osSemaphoreId_t mySemMoveBackward;
-osMutexId_t myMutex;
+//volatile osSemaphoreId_t mySemMoveForward;
+//volatile osSemaphoreId_t mySemMoveBackward;
+//osMutexId_t myMutex;
+
+osMessageQueueId_t runningLedMsg, allGreenLedOnMsg, doubleFlashMsg;
+
+//osThreadId_t tMotorControl_Id;
+
+myDataPkt myData;
+
+volatile int command;
+
 volatile int debug = 0;
 
 volatile int debug2 = 0;
@@ -140,7 +149,7 @@ void set_speed(float duty_cycle, bool update) {
 	TPM2_C1V = CnV_value;
 }
 
-void motor_control(Movement movement, float duty_cycle, bool update) {
+void tMotorControl(Movement movement, float duty_cycle, bool update) {
 	
 	current_movement = movement;
 	set_speed(duty_cycle, update);
@@ -248,33 +257,51 @@ void motor_control(Movement movement, float duty_cycle, bool update) {
 
 
 void serial_decoder(int command) {
+	
 	if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
+		myData.cmd = 0x02;
+		myData.data = 0x02;
 		return;
 	}
 	
 	if (command >= LOWERCOMMANDLIMIT && command < 11) { // duty_cycle control
+		myData.cmd = 0x02;
+		myData.data = 0x02;
 		set_speed(command / 10.0f, true);
 
-
 	} else if (command == 11) {
-			motor_control(MoveForward, current_duty_cycle, true);
+			debug++;
+			myData.cmd = 0x01;
+			myData.data = 0x01;
+			tMotorControl(MoveForward, current_duty_cycle, true);
 
 
 	} else if (command == 12) { 
-			motor_control(MoveBackward, current_duty_cycle, true);
-
+			myData.cmd = 0x01;
+			myData.data = 0x01;
+			tMotorControl(MoveBackward, current_duty_cycle, true);
 
 	} else if (command == 13) { 
-			motor_control(TurnRight, current_duty_cycle, true);
+			myData.cmd = 0x01;
+			myData.data = 0x01;
+			tMotorControl(TurnRight, current_duty_cycle, true);
 
 		
 	} else if (command == 14) {
-			motor_control(TurnLeft, current_duty_cycle, true);
+			myData.cmd = 0x01;
+			myData.data = 0x01;
+			tMotorControl(TurnLeft, current_duty_cycle, true);
 
 
-	} 
-	else {
-		motor_control(Stop, current_duty_cycle, false);
+	} else if (command == 100) {
+			// Bluetooth Connected
+			myData.cmd = 0x03;
+			myData.data = 0x03;
+
+	} else {
+			myData.cmd = 0x02;
+			myData.data = 0x02;
+			tMotorControl(Stop, current_duty_cycle, false);
 	
 	}
 }
@@ -283,17 +310,11 @@ void serial_decoder(int command) {
 void Serial_ISR(void) {
 	
 		if((UART2->S1 & UART_S1_RDRF_MASK)) {	
-			if (UART2->D == 11) {
-				debug++;
-				osSemaphoreRelease(mySemMoveForward);
-			} else if(UART2->D == 12) {
-				debug++;
-				osSemaphoreRelease(mySemMoveBackward);
-			}
 	
+			command = UART2->D;	
+			
 		}
 		
-
 }
  
 void UART2_IRQHandler(void){
@@ -301,48 +322,194 @@ void UART2_IRQHandler(void){
 	Serial_ISR();
 }
 
-void move_forward_thread(void *argument) {
-	for(;;){
+
+void tBrain (void *argument) {
+	
+	for(;;) {
+		serial_decoder(command);
+	}
+
+}
+
+/*----------------------------------------------------------------------------
+ * Red LED and Green LED Code 
+ *---------------------------------------------------------------------------*/
+
+void running_green_led(void *argument) {
+	
+	myDataPkt myRxData;
+	
+	for (;;) {
 		
-		osSemaphoreAcquire(mySemMoveForward, osWaitForever);
-		//osMutexAcquire(myMutex, osWaitForever);
+		osMessageQueueGet(runningLedMsg, &myRxData, NULL, osWaitForever);
 		debug2++;
-		motor_control(MoveForward, current_duty_cycle, true);
-		osDelay(1000);
-		motor_control(MoveForward, current_duty_cycle, true);
-		osDelay(1000);
+		
+		if (myRxData.cmd == 0x01 && myRxData.data == 0x01) {
+			
+			red_led_500ms();
+			all_green_led_off();
+			
+			if (led_on_id > 7) {
+				led_on_id = 0;
+			}
+	
+			switch (led_on_id) {
+				case 0:
+					PTC->PDOR &= ~MASK(PTC17_PIN);
+					PTA->PDOR |= MASK(PTA13_PIN);
+					//osDelay(1);
+					
+					break;
+				case 1:
+					PTA->PDOR &= ~MASK(PTA13_PIN);
+					PTC->PDOR |= MASK(PTC12_PIN);
+					//osDelay(1);
+					
+					break;
+				case 2:
+					PTC->PDOR &= ~MASK(PTC12_PIN);
+					PTD->PDOR |= MASK(PTD5_PIN);
+					//osDelay(1);
+					break;
+				
+				case 3:
+					PTD->PDOR &= ~MASK(PTD5_PIN);
+					PTC->PDOR |= MASK(PTC13_PIN);
+					//osDelay(1);
+					break;
+				case 4:
+					PTC->PDOR &= ~MASK(PTC13_PIN);
+					PTD->PDOR |= MASK(PTD0_PIN);
+					//osDelay(1);
+					break;
+				case 5:
+					PTD->PDOR &= ~MASK(PTD0_PIN);
+					PTC->PDOR |= MASK(PTC16_PIN);
+					//osDelay(1);
+					break;
+				case 6:
+					PTC->PDOR &= ~MASK(PTC16_PIN);
+					PTD->PDOR |= MASK(PTD2_PIN);
+					//osDelay(1);
+					break;
+				case 7:
+					PTD->PDOR &= ~MASK(PTD2_PIN);
+					PTC->PDOR |= MASK(PTC17_PIN);
+					//osDelay(1);
+					break;	
+			}
+			
+		
+			led_on_id++;
+			
+		}
+		
+	}
+
+}
+
+void green_led_control (void *arguement) {
+	
+	myDataPkt myRxData;
+	
+	for (;;) {
+		
+		osMessageQueueGet(runningLedMsg, &myRxData, NULL, osWaitForever);
+		debug2++;
+		if (myRxData.cmd == 0x02 && myRxData.data == 0x02) {
+			red_led_250ms();
+			all_green_led_on();
+		} 
+//		else {
+//			all_green_led_off();
+//			all_green_led_on();
+//		}
+	}
+
+}
+
+void all_green_led_on (void) {
+	
+			PTD->PDOR |= MASK(PTD5_PIN);
+			PTD->PDOR |= MASK(PTD0_PIN);
+			PTD->PDOR |= MASK(PTD2_PIN);
+			PTA->PDOR |= MASK(PTA13_PIN);
+			PTC->PDOR |= MASK(PTC12_PIN);
+			PTC->PDOR |= MASK(PTC13_PIN);
+			PTC->PDOR |= MASK(PTC16_PIN);
+			PTC->PDOR |= MASK(PTC17_PIN);
+
+}
+
+void all_green_led_off (void) {
+	
+	PTD->PDOR &= ~MASK(PTD0_PIN);
+	PTD->PDOR &= ~MASK(PTD2_PIN);
+	PTD->PDOR &= ~MASK(PTD5_PIN);
+	PTA->PDOR &= ~MASK(PTA13_PIN);
+	PTC->PDOR &= ~MASK(PTC12_PIN);
+	PTC->PDOR &= ~MASK(PTC13_PIN);
+	PTC->PDOR &= ~MASK(PTC16_PIN);
+	PTC->PDOR &= ~MASK(PTC17_PIN);
+}
+
+
+
+void double_flash_green_led(void *argument) {
+	
+	myDataPkt myRxData;
+	osMessageQueueGet(doubleFlashMsg, &myRxData, NULL, osWaitForever);
+	
+	for (;;) {
+			
+		if (myRxData.cmd == 0x03 && myRxData.data == 0x03) {
+		
+				all_green_led_on();
+				osDelay(1000);
+				all_green_led_off();
+				osDelay(1000);
+				all_green_led_on();
+				osDelay(1000);
+				all_green_led_off();
+				osDelay(1000);
+		}
+	}
+	
+
+	
+
+}
+
+
+void red_led_500ms(void) {
+	
+	PTB->PTOR |= MASK(PTB8_PIN);
+	osDelay(500);
+}
+
+void red_led_250ms(void) {
+	
+	PTB->PTOR |= MASK(PTB8_PIN);
+	osDelay(250);
+}
+
+void tLED (void *argument) {
+	
+	
+	for(;;) {
+
+		osMessageQueuePut(runningLedMsg, &myData, NULL, 0);
+		osDelay(100);
+		osMessageQueuePut(allGreenLedOnMsg, &myData, NULL, 0);
+		osDelay(100);
+
 		
 		
 	}
+	
+	
+
 }
-
-void move_backward_thread(void *argument) {
-	for(;;){
-		
-		osSemaphoreAcquire(mySemMoveBackward, osWaitForever);
-		//osMutexAcquire(myMutex, osWaitForever);
-		debug2++;
-		motor_control(MoveBackward, current_duty_cycle, true);
-		osDelay(1000);
-		motor_control(MoveBackward, current_duty_cycle, true);
-		osDelay(1000);
-		
-		
-	}
-}
-
-//void motor_run_thread (void *argument) {
-//	osMutexAcquire(myMutex, osWaitForever);
-//	debug2++;
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	motor_control(MoveForward, current_duty_cycle, true);
-//	osMutexRelease(myMutex);
-//}
-
 
  
 int main (void) {
@@ -354,16 +521,23 @@ int main (void) {
 	initPWM();
 	initGPIO();
 	initUART2(BAUD_RATE);
-	//motor_control(Stop, current_duty_cycle, false);
 	
   osKernelInitialize();                 // Initialize CMSIS-RTOS
-	//myMutex = osMutexNew(NULL);
-	mySemMoveForward = osSemaphoreNew(1, 0, NULL);
-	mySemMoveBackward = osSemaphoreNew(1, 0, NULL);
-	//osThreadNew(move_forward_thread, NULL, NULL);
 	
-	osThreadNew(move_forward_thread, NULL, NULL);
-	osThreadNew(move_backward_thread, NULL, NULL);
+	runningLedMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
+	allGreenLedOnMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
+	doubleFlashMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
+	
+	osThreadNew(tBrain, NULL, &thread_attr_realtime);
+	
+	osThreadNew(tLED, NULL, &thread_attr_realtime);
+	
+	osThreadNew(green_led_control, NULL, &thread_attr_realtime);
+	
+	osThreadNew(double_flash_green_led, NULL, &thread_attr_realtime);
+	
+	osThreadNew(running_green_led, NULL, &thread_attr_realtime);
+	
   
   osKernelStart();                      // Start thread execution
 	

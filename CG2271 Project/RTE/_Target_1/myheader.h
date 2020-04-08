@@ -38,15 +38,28 @@
 #define LOWERCOMMANDLIMIT						0
 #define UPPERCOMMANDLIMIT						15
 #define DEFAULT_duty_cycle						0.5f
+#define MSG_COUNT										1
 
 // Shifting Operation
 #define MASK(x) 										(1 << (x))
 
-//const osThreadAttr_t thread_attr = {
-//	.priority = osPriorityNormal1 
-//};
+const osThreadAttr_t thread_attr = {
+	.priority = osPriorityNormal1 
+};
+
+const osThreadAttr_t thread_attr_realtime = {
+	.priority = osPriorityRealtime7
+};
 
 // Type definition 
+
+typedef struct {
+	
+	uint8_t cmd;
+	uint8_t data;
+	
+}myDataPkt;
+
 typedef enum {
 	
 	RED_LED, GREEN_LED
@@ -72,9 +85,14 @@ void initUART2(uint32_t baud_rate);
 void initPWM(void);
 void initGPIO(void);
 void set_speed(float duty_cycle, bool update);
+void all_green_led_on(void);
+void all_green_led_off(void);
+//void double_flash_green_led(void);
+void red_led_500ms(void);
+void red_led_250ms(void);
 
 
-void motor_control(Movement movement, float duty_cycle, bool update);
+void tMotorControl(Movement movement, float duty_cycle, bool update);
 void serial_decoder(int command);
 void Serial_ISR(void);
 
