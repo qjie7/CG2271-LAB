@@ -28,6 +28,9 @@
 // For Red LED
 #define PTB8_PIN										8
 
+// For Buzzer 
+#define PTA4_PIN										4
+
 // For BT06/UART
 #define BAUD_RATE 									9600
 #define UART_TX_PORTE22 						22
@@ -47,7 +50,11 @@ const osThreadAttr_t thread_attr = {
 	.priority = osPriorityNormal1 
 };
 
-const osThreadAttr_t thread_attr_realtime = {
+const osThreadAttr_t thread_attr_realtime6 = {
+	.priority = osPriorityRealtime6
+};
+
+const osThreadAttr_t thread_attr_realtime7 = {
 	.priority = osPriorityRealtime7
 };
 
@@ -87,7 +94,7 @@ void initGPIO(void);
 void set_speed(float duty_cycle, bool update);
 void all_green_led_on(void);
 void all_green_led_off(void);
-//void double_flash_green_led(void);
+void double_flash_green_led(void);
 void red_led_500ms(void);
 void red_led_250ms(void);
 
@@ -168,8 +175,8 @@ void initPWM(void) {
 	SIM_SCGC5 |= SIM_SCGC5_PORTE_MASK;
 		
 	// Configure MUX settings to make PTA4_Pin, PTB1_Pin, PTB3_PIN, PTC8_PIN, PTE30_PIN as PWM mode
-//	PORTA->PCR[PTA4_PIN] &= ~PORT_PCR_MUX_MASK;
-//	PORTA->PCR[PTA4_PIN] |= PORT_PCR_MUX(3);
+	PORTA->PCR[PTA4_PIN] &= ~PORT_PCR_MUX_MASK;
+	PORTA->PCR[PTA4_PIN] |= PORT_PCR_MUX(3);
 	
 	PORTB->PCR[PTB1_PIN] &= ~PORT_PCR_MUX_MASK;
 	PORTB->PCR[PTB1_PIN] |= PORT_PCR_MUX(3);
@@ -197,7 +204,7 @@ void initPWM(void) {
 
 	// Set all TPM values to 0 to prevent the motor from running at the very beginning after running the program
 	TPM0->MOD = 0;
-	//TPM0_C1V = 0;
+	TPM0_C1V = 0;
 	TPM0_C2V = 0;
 	TPM0_C3V = 0;
 	TPM0_C4V = 0;
@@ -215,7 +222,7 @@ void initPWM(void) {
 	TPM1->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK)); 	//Clear before assign value
 	TPM2->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK)); 	//Clear before assign value
 	
-	//TPM0_C1SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 1 before assign
+	TPM0_C1SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 1 before assign
 	TPM0_C2SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 2 before assign
 	TPM0_C3SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 3 before assign
 	TPM0_C4SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 4 before assign
@@ -240,7 +247,7 @@ void initPWM(void) {
 	
 
 	// ELSB:ELSA = 10 , MSB:MSA = 10  --> Edge-aligned PWM, High-true pulses (clear Output on match, set Output on reload)
-	//TPM0_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 1  
+	TPM0_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 1  
 	TPM0_C2SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM0 Channel 2
 	TPM0_C3SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 3
 	TPM0_C4SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 4  

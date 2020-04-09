@@ -10,6 +10,8 @@ osMessageQueueId_t runningLedMsg, allGreenLedOnMsg, doubleFlashMsg;
 
 myDataPkt myData;
 
+volatile bool isConnected = false;
+
 volatile int command;
 
 volatile int debug = 0;
@@ -88,7 +90,6 @@ void initMotorPWM(int pin, char port) {
 			PORTA->PCR[pin] |= PORT_PCR_MUX(3);
 		
 			TPM0->MOD = 7500;
-			//TPM0_C1V = 2250;
 			TPM0_C2V = 2250;
 
 			break;
@@ -259,8 +260,14 @@ void tMotorControl(Movement movement, float duty_cycle, bool update) {
 void serial_decoder(int command) {
 	
 	if (command < LOWERCOMMANDLIMIT || command > UPPERCOMMANDLIMIT) {
-		myData.cmd = 0x02;
-		myData.data = 0x02;
+		
+		if (command == 100) {
+			myData.cmd = 0x03;
+			myData.data = 0x03;
+		} else {
+			myData.cmd = 0x02;
+			myData.data = 0x02;
+		}
 		return;
 	}
 	
@@ -293,11 +300,6 @@ void serial_decoder(int command) {
 			tMotorControl(TurnLeft, current_duty_cycle, true);
 
 
-	} else if (command == 100) {
-			// Bluetooth Connected
-			myData.cmd = 0x03;
-			myData.data = 0x03;
-
 	} else {
 			myData.cmd = 0x02;
 			myData.data = 0x02;
@@ -311,8 +313,7 @@ void Serial_ISR(void) {
 	
 		if((UART2->S1 & UART_S1_RDRF_MASK)) {	
 	
-			command = UART2->D;	
-			
+			command = UART2->D;			
 		}
 		
 }
@@ -420,10 +421,12 @@ void green_led_control (void *arguement) {
 			red_led_250ms();
 			all_green_led_on();
 		} 
-//		else {
-//			all_green_led_off();
-//			all_green_led_on();
-//		}
+		else if (myRxData.cmd == 0x03 && myRxData.data == 0x03 && isConnected == false ) {
+			
+			isConnected = true;
+			double_flash_green_led();
+			
+		}
 	}
 
 }
@@ -455,30 +458,21 @@ void all_green_led_off (void) {
 
 
 
-void double_flash_green_led(void *argument) {
+void double_flash_green_led(void) {
 	
-	myDataPkt myRxData;
-	osMessageQueueGet(doubleFlashMsg, &myRxData, NULL, osWaitForever);
-	
-	for (;;) {
-			
-		if (myRxData.cmd == 0x03 && myRxData.data == 0x03) {
-		
-				all_green_led_on();
-				osDelay(1000);
 				all_green_led_off();
-				osDelay(1000);
+				osDelay(200);
 				all_green_led_on();
-				osDelay(1000);
+				osDelay(200);
 				all_green_led_off();
-				osDelay(1000);
-		}
-	}
+				osDelay(200);
+				all_green_led_on();
+				osDelay(200);
 	
-
-	
-
 }
+	
+
+
 
 
 void red_led_500ms(void) {
@@ -497,18 +491,14 @@ void tLED (void *argument) {
 	
 	
 	for(;;) {
-
+		
 		osMessageQueuePut(runningLedMsg, &myData, NULL, 0);
 		osDelay(100);
 		osMessageQueuePut(allGreenLedOnMsg, &myData, NULL, 0);
 		osDelay(100);
-
-		
-		
+	
 	}
 	
-	
-
 }
 
  
@@ -526,18 +516,14 @@ int main (void) {
 	
 	runningLedMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
 	allGreenLedOnMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
-	doubleFlashMsg = osMessageQueueNew(MSG_COUNT, sizeof(myDataPkt), NULL);
 	
-	osThreadNew(tBrain, NULL, &thread_attr_realtime);
+	osThreadNew(tBrain, NULL, &thread_attr_realtime7);
 	
-	osThreadNew(tLED, NULL, &thread_attr_realtime);
+	osThreadNew(tLED, NULL, &thread_attr_realtime7);
 	
-	osThreadNew(green_led_control, NULL, &thread_attr_realtime);
+	osThreadNew(green_led_control, NULL, &thread_attr_realtime7);
 	
-	osThreadNew(double_flash_green_led, NULL, &thread_attr_realtime);
-	
-	osThreadNew(running_green_led, NULL, &thread_attr_realtime);
-	
+	osThreadNew(running_green_led, NULL, &thread_attr_realtime7);
   
   osKernelStart();                      // Start thread execution
 	
