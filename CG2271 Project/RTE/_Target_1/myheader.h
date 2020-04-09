@@ -3,17 +3,28 @@
 #include "cmsis_os2.h"  
 #include <stdbool.h>
 
-// For DRV8833 #1 
-#define PTB0_PIN 										0
-#define PTB1_PIN 										1
-#define PTB2_PIN										2
-#define PTB3_PIN										3
+//// For DRV8833 #1 
+//#define PTB0_PIN 										0    // tpm1 chn0
+//#define PTB1_PIN 										1 	 // tpm1 chn1
+//#define PTB2_PIN										2	   // tpm1 chn0
+//#define PTB3_PIN										3 	 // tpm1 chn1
+
+//// For DRV8833 #2
+//#define PTE30_PIN 									30   // tpm2 chn0
+//#define PTA5_PIN 										5		 // tpm2 chn1
+//#define PTC8_PIN										8    // tpm2 chn0
+//#define PTC9_PIN										9    // tpm2 chn1
+
+#define PTE20_PIN 										20    // tpm1 chn0
+#define PTE21_PIN 										21 	 // tpm1 chn1
+#define PTB0_PIN											0	   // tpm1 chn0
+#define PTB1_PIN											1 	 // tpm1 chn1
 
 // For DRV8833 #2
-#define PTE30_PIN 									30
-#define PTA5_PIN 										5
-#define PTC8_PIN										8
-#define PTC9_PIN										9
+#define PTA1_PIN 										1   // tpm2 chn0
+#define PTA2_PIN 										2		 // tpm2 chn1
+#define PTB2_PIN										2    // tpm2 chn0
+#define PTB3_PIN										3    // tpm2 chn1
 
 //For Green LED
 #define PTA13_PIN 									13
@@ -29,7 +40,8 @@
 #define PTB8_PIN										8
 
 // For Buzzer 
-#define PTA4_PIN										4
+#define PTA4_PIN										4		// tpm0 chn 1
+
 
 // For BT06/UART
 #define BAUD_RATE 									9600
@@ -69,21 +81,94 @@ typedef struct {
 
 typedef enum {
 	
+//	C7 = 2093,
+//	C7U = 2217,
+//	D7D = C7U,
+//	D7 = 2349,
+//	D7U = 2489,
+//	E7D = D7U,
+//	E7 = 2637,
+//	F7 = 2794,
+//	F7U = 2960,
+//	G7D = F7U,
+//	G7 = 3136,
+//	G7U = 3322,
+//	A7D = G7U,
+//	A7 = 3520,
+//	A7U = 3729,
+//	B7D = A7U,
+//	B7 = 3951,
+	
+	C6 = 1047,
+	C6U = 1109,
+	D6D = C6U,
+	D6 = 1175,
+	D6U = 1245,
+	E6D = D6U,
+	E6 = 1319,
+	F6 = 1397,
+	F6U = 1480,
+	G6D = F6U,
+	G6 = 1568,
+	G6U = 1661,
+	A6D = G6U,
+	A6 = 1760,
+	A6U = 1865,
+	B6D = A6U,
+	B6 = 1976,
+	
+	SILENCE = 0
+	
+}Note;
+
+typedef enum {
+	
 	RED_LED, GREEN_LED
 	
 }LED;
 
-//typedef enum {
-//	
-//	 FrontLeftWheel = PTA4_PIN , FrontRightWheel = PTB3_PIN, BackLeftWheel = PTC9_PIN, BackRightWheel = PTB0_PIN
-//	
-//}Wheel;
+
 
 typedef enum {
 	
 	 MoveForward , MoveBackward, TurnRight, TurnLeft, Stop
 	
 }Movement;
+
+typedef enum {
+	Whole = 64,
+	Half = 32,
+	Quarter = 16,
+	Eight = 8,
+	Sixteenth = 4,
+	ThirtySecond = 2,
+	SixtyFourth = 1,
+	DoubleWhole = 128
+}StandardNoteLength;
+
+typedef enum {
+	VERYSHORT = Sixteenth,
+	SHORT = Eight,
+	MEDIUM = Quarter,
+	LONG = Half,
+	VERYLONG = Whole
+}NoteLength;
+
+Note song[] = {F6U, G6U, B6, B6, B6, B6, B6, B6, B6, F6U, G6U, B6, B6, B6, B6, B6, B6, B6, F6U, G6U, B6, B6, B6, B6, B6, B6, B6, B6, B6, B6D};
+NoteLength noteLength[] = {MEDIUM, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT,
+													 MEDIUM, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT,
+													 MEDIUM, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, MEDIUM,
+													 SHORT, SHORT, LONG};
+NoteLength silenceLength[] = {LONG, LONG, MEDIUM, MEDIUM, MEDIUM, MEDIUM, VERYSHORT, VERYSHORT, SHORT,
+															LONG, LONG, MEDIUM, MEDIUM, MEDIUM, MEDIUM, VERYSHORT, VERYSHORT, SHORT,
+															LONG, LONG, MEDIUM, MEDIUM, MEDIUM, MEDIUM, VERYSHORT, VERYSHORT, SHORT,
+															MEDIUM, MEDIUM, MEDIUM};
+Note connectTones[] = {C6, D6, E6, F6, G6, A6, B6};
+NoteLength connectNoteLength[] = {SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT};
+NoteLength connectSilenceLength[] = {SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT};
+Note finishTones[] = {B6, A6, G6, F6, E6, D6, C6};
+NoteLength finishNoteLength[] = {SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT};
+NoteLength finishSilenceLength[] = {SHORT, SHORT, SHORT, SHORT, SHORT, SHORT, SHORT};
 
 // Functions declaration
 void initMotorGPIO(int pin, char port, bool state);
@@ -177,18 +262,32 @@ void initPWM(void) {
 	// Configure MUX settings to make PTA4_Pin, PTB1_Pin, PTB3_PIN, PTC8_PIN, PTE30_PIN as PWM mode
 	PORTA->PCR[PTA4_PIN] &= ~PORT_PCR_MUX_MASK;
 	PORTA->PCR[PTA4_PIN] |= PORT_PCR_MUX(3);
-	
-	PORTB->PCR[PTB1_PIN] &= ~PORT_PCR_MUX_MASK;
-	PORTB->PCR[PTB1_PIN] |= PORT_PCR_MUX(3);
-	
-	PORTB->PCR[PTB3_PIN] &= ~PORT_PCR_MUX_MASK;
-	PORTB->PCR[PTB3_PIN] |= PORT_PCR_MUX(3);
-	
-	PORTC->PCR[PTC8_PIN] &= ~PORT_PCR_MUX_MASK;
-	PORTC->PCR[PTC8_PIN] |= PORT_PCR_MUX(3);
-	
-	PORTE->PCR[PTE30_PIN] &= ~PORT_PCR_MUX_MASK;
-	PORTE->PCR[PTE30_PIN] |= PORT_PCR_MUX(3);
+//	
+//	PORTB->PCR[PTB1_PIN] &= ~PORT_PCR_MUX_MASK;
+//	PORTB->PCR[PTB1_PIN] |= PORT_PCR_MUX(3);
+//	
+//	PORTB->PCR[PTB3_PIN] &= ~PORT_PCR_MUX_MASK;
+//	PORTB->PCR[PTB3_PIN] |= PORT_PCR_MUX(3);
+//	
+//	PORTC->PCR[PTC8_PIN] &= ~PORT_PCR_MUX_MASK;
+//	PORTC->PCR[PTC8_PIN] |= PORT_PCR_MUX(3);
+//	
+//	PORTE->PCR[PTE30_PIN] &= ~PORT_PCR_MUX_MASK;
+//	PORTE->PCR[PTE30_PIN] |= PORT_PCR_MUX(3);
+
+
+		
+		PORTE->PCR[PTE21_PIN] &= ~PORT_PCR_MUX_MASK;
+		PORTE->PCR[PTE21_PIN] |= PORT_PCR_MUX(3);
+		
+		PORTB->PCR[PTB1_PIN] &= ~PORT_PCR_MUX_MASK;
+		PORTB->PCR[PTB1_PIN] |= PORT_PCR_MUX(3);
+		
+		PORTA->PCR[PTA1_PIN] &= ~PORT_PCR_MUX_MASK;
+		PORTA->PCR[PTA1_PIN] |= PORT_PCR_MUX(3);
+		
+		PORTB->PCR[PTB2_PIN] &= ~PORT_PCR_MUX_MASK;
+		PORTB->PCR[PTB2_PIN] |= PORT_PCR_MUX(3);
 	
 	
 	// Enable clock to supply power to TPM0, TPM1 and TPM2
@@ -205,16 +304,16 @@ void initPWM(void) {
 	// Set all TPM values to 0 to prevent the motor from running at the very beginning after running the program
 	TPM0->MOD = 0;
 	TPM0_C1V = 0;
-	TPM0_C2V = 0;
-	TPM0_C3V = 0;
-	TPM0_C4V = 0;
-	TPM0_C5V = 0;
+//	TPM0_C2V = 0;
+//	TPM0_C3V = 0;
+//	TPM0_C4V = 0;
+//	TPM0_C5V = 0;
 
-	TPM1->MOD = 0;
+	TPM1->MOD = 7500;
 	TPM1_C0V = 0;
 	TPM1_C1V = 0;
 	
-	TPM2->MOD = 0;
+	TPM2->MOD = 7500;
 	TPM2_C0V = 0;
 	TPM2_C1V = 0;
 
@@ -223,10 +322,10 @@ void initPWM(void) {
 	TPM2->SC &= ~((TPM_SC_CMOD_MASK) | (TPM_SC_PS_MASK)); 	//Clear before assign value
 	
 	TPM0_C1SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 1 before assign
-	TPM0_C2SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 2 before assign
-	TPM0_C3SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 3 before assign
-	TPM0_C4SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 4 before assign
-	TPM0_C5SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 5 before assign
+//	TPM0_C2SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 2 before assign
+//	TPM0_C3SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 3 before assign
+//	TPM0_C4SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 4 before assign
+//	TPM0_C5SC &= ~((TPM_CnSC_ELSB_MASK) | (TPM_CnSC_ELSA_MASK) | (TPM_CnSC_MSB_MASK) | (TPM_CnSC_MSA_MASK)); // Clear Channel 5 before assign
 	
 	//CMOD:LPTPM counter increments on every LPTPM counter clock
 	//PS:111(7) Divide by 128
@@ -248,10 +347,10 @@ void initPWM(void) {
 
 	// ELSB:ELSA = 10 , MSB:MSA = 10  --> Edge-aligned PWM, High-true pulses (clear Output on match, set Output on reload)
 	TPM0_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 1  
-	TPM0_C2SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM0 Channel 2
-	TPM0_C3SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 3
-	TPM0_C4SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 4  
-	TPM0_C5SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM0 Channel 5
+//	TPM0_C2SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM0 Channel 2
+//	TPM0_C3SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 3
+//	TPM0_C4SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM0 Channel 4  
+//	TPM0_C5SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM0 Channel 5
 
 	TPM1_C0SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1));  // For TPM1 Channel 0  
 	TPM1_C1SC |= (TPM_CnSC_ELSB(1) | TPM_CnSC_MSB(1)); 	// For TPM1 Channel 1
@@ -264,19 +363,31 @@ void initGPIO(void) {
 	// Enable Clock to Port A, Port B, Port C and Port D  
 	SIM->SCGC5 |= ((SIM_SCGC5_PORTA_MASK) | (SIM_SCGC5_PORTB_MASK) | (SIM_SCGC5_PORTC_MASK) | (SIM_SCGC5_PORTD_MASK));    
 	
+	PORTE->PCR[PTE20_PIN] &= ~PORT_PCR_MUX_MASK;
+	PORTE->PCR[PTE20_PIN] |= PORT_PCR_MUX(1);
+	
+	PORTB->PCR[PTB0_PIN] &= ~PORT_PCR_MUX_MASK;
+  PORTB->PCR[PTB0_PIN] |= PORT_PCR_MUX(1);
+	
+	PORTA->PCR[PTA2_PIN] &= ~PORT_PCR_MUX_MASK;
+	PORTA->PCR[PTA2_PIN] |= PORT_PCR_MUX(1);
+	
+	PORTB->PCR[PTB3_PIN] &= ~PORT_PCR_MUX_MASK;
+  PORTB->PCR[PTB3_PIN] |= PORT_PCR_MUX(1);
+	
 	// Configure MUX settings to GPIO    
-	PORTA->PCR[PTA5_PIN] &= ~PORT_PCR_MUX_MASK;  
-	PORTA->PCR[PTA5_PIN] |= PORT_PCR_MUX(1); 	
-	
-	PORTA->PCR[PTA13_PIN] &= ~PORT_PCR_MUX_MASK;  
-	PORTA->PCR[PTA13_PIN] |= PORT_PCR_MUX(1); 
-	
-	PORTB->PCR[PTB0_PIN] &= ~PORT_PCR_MUX_MASK;  
-	PORTB->PCR[PTB0_PIN] |= PORT_PCR_MUX(1);
- 
-	PORTB->PCR[PTB2_PIN] &= ~PORT_PCR_MUX_MASK;  
-	PORTB->PCR[PTB2_PIN] |= PORT_PCR_MUX(1);
-	
+//	PORTA->PCR[PTA5_PIN] &= ~PORT_PCR_MUX_MASK;  
+//	PORTA->PCR[PTA5_PIN] |= PORT_PCR_MUX(1); 	
+//	
+//	PORTA->PCR[PTA13_PIN] &= ~PORT_PCR_MUX_MASK;  
+//	PORTA->PCR[PTA13_PIN] |= PORT_PCR_MUX(1); 
+//	
+//	PORTB->PCR[PTB0_PIN] &= ~PORT_PCR_MUX_MASK;  
+//	PORTB->PCR[PTB0_PIN] |= PORT_PCR_MUX(1);
+// 
+//	PORTB->PCR[PTB2_PIN] &= ~PORT_PCR_MUX_MASK;  
+//	PORTB->PCR[PTB2_PIN] |= PORT_PCR_MUX(1);
+//	
 	PORTB->PCR[PTB8_PIN] &= ~PORT_PCR_MUX_MASK;  
 	PORTB->PCR[PTB8_PIN] |= PORT_PCR_MUX(1);
 	 
@@ -302,17 +413,49 @@ void initGPIO(void) {
 	PORTD->PCR[PTD5_PIN] |= PORT_PCR_MUX(1);
 	
 	// Set Data Direction Registers for Port A, Port B, Port C and Port D  
-	PTA->PDDR |= (MASK(PTA5_PIN) | MASK(PTA13_PIN));
-	PTB->PDDR |= (MASK(PTB0_PIN) | MASK(PTB2_PIN) | MASK(PTB8_PIN));    
-	PTC->PDDR |= (MASK(PTC9_PIN) | MASK(PTC12_PIN) | MASK(PTC13_PIN) | MASK(PTC16_PIN) | MASK(PTC17_PIN));
+//	PTA->PDDR |= (MASK(PTA5_PIN) | MASK(PTA13_PIN));
+//	PTB->PDDR |= (MASK(PTB0_PIN) | MASK(PTB2_PIN) | MASK(PTB8_PIN));    
+//	PTC->PDDR |= (MASK(PTC9_PIN) | MASK(PTC12_PIN) | MASK(PTC13_PIN) | MASK(PTC16_PIN) | MASK(PTC17_PIN));
+//	PTD->PDDR |= (MASK(PTD0_PIN) | MASK(PTD2_PIN) | MASK(PTD5_PIN));
+//	
+//	PTA->PDOR &= ~MASK(PTA5_PIN);
+//	PTA->PDOR &= ~MASK(PTA13_PIN);
+//	PTB->PDOR &= ~MASK(PTB0_PIN);
+//	PTB->PDOR &= ~MASK(PTB2_PIN);
+//	PTB->PDOR &= ~MASK(PTB8_PIN);
+//	PTC->PDOR &= ~MASK(PTC9_PIN);	
+//	PTC->PDOR &= ~MASK(PTC12_PIN);	
+//	PTC->PDOR &= ~MASK(PTC13_PIN);
+//	PTC->PDOR &= ~MASK(PTC16_PIN);
+//	PTC->PDOR &= ~MASK(PTC17_PIN);
+//	PTD->PDOR &= ~MASK(PTD0_PIN);
+//	PTD->PDOR &= ~MASK(PTD2_PIN);
+//	PTD->PDOR &= ~MASK(PTD5_PIN);
+
+	PTA->PDDR |= (MASK(PTA2_PIN));
+	PTB->PDDR |= (MASK(PTB1_PIN) | MASK(PTB3_PIN) | MASK(PTB8_PIN));    
+	PTC->PDDR |= (MASK(PTC12_PIN) | MASK(PTC13_PIN) | MASK(PTC16_PIN) | MASK(PTC17_PIN));
 	PTD->PDDR |= (MASK(PTD0_PIN) | MASK(PTD2_PIN) | MASK(PTD5_PIN));
 	
-	PTA->PDOR &= ~MASK(PTA5_PIN);
-	PTA->PDOR &= ~MASK(PTA13_PIN);
-	PTB->PDOR &= ~MASK(PTB0_PIN);
-	PTB->PDOR &= ~MASK(PTB2_PIN);
+//	PTA->PDOR &= ~MASK(PTA5_PIN);
+//	PTA->PDOR &= ~MASK(PTA13_PIN);
+//	PTB->PDOR &= ~MASK(PTB0_PIN);
+//	PTB->PDOR &= ~MASK(PTB2_PIN);
+//	PTB->PDOR &= ~MASK(PTB8_PIN);
+//	PTC->PDOR &= ~MASK(PTC9_PIN);	
+//	PTC->PDOR &= ~MASK(PTC12_PIN);	
+//	PTC->PDOR &= ~MASK(PTC13_PIN);
+//	PTC->PDOR &= ~MASK(PTC16_PIN);
+//	PTC->PDOR &= ~MASK(PTC17_PIN);
+//	PTD->PDOR &= ~MASK(PTD0_PIN);
+//	PTD->PDOR &= ~MASK(PTD2_PIN);
+//	PTD->PDOR &= ~MASK(PTD5_PIN);
+
+	PTA->PDOR &= ~MASK(PTA2_PIN);
+	//PTA->PDOR &= ~MASK(PTA13_PIN);
+	PTB->PDOR &= ~MASK(PTB1_PIN);
+	PTB->PDOR &= ~MASK(PTB3_PIN);
 	PTB->PDOR &= ~MASK(PTB8_PIN);
-	PTC->PDOR &= ~MASK(PTC9_PIN);	
 	PTC->PDOR &= ~MASK(PTC12_PIN);	
 	PTC->PDOR &= ~MASK(PTC13_PIN);
 	PTC->PDOR &= ~MASK(PTC16_PIN);
@@ -320,4 +463,6 @@ void initGPIO(void) {
 	PTD->PDOR &= ~MASK(PTD0_PIN);
 	PTD->PDOR &= ~MASK(PTD2_PIN);
 	PTD->PDOR &= ~MASK(PTD5_PIN);
+
+
 }
