@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\my_project.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\my_project.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Fri Apr 10 00:09:22 2020
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Tue Apr 14 18:06:15 2020
 <BR><P>
 <H3>Maximum Stack Usage =        120 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -312,7 +312,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_float_round
 </UL>
-<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;serial_decoder
+<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tBrain
 <LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;playnote
 </UL>
 
@@ -321,7 +321,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[48]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_float_epilogue
 </UL>
-<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;serial_decoder
+<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tBrain
 <LI><a href="#[86]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;playnote
 </UL>
 
@@ -660,9 +660,9 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[74]"></a>Serial_ISR</STRONG> (Thumb, 32 bytes, Stack size 8 bytes, main.o(i.Serial_ISR))
-<BR><BR>[Stack]<UL><LI>Max Depth = 84<LI>Call Chain = Serial_ISR &rArr; serial_decoder &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
+<BR><BR>[Stack]<UL><LI>Max Depth = 84<LI>Call Chain = Serial_ISR &rArr; tBrain &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
 </UL>
-<BR>[Calls]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;serial_decoder
+<BR>[Calls]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tBrain
 </UL>
 <BR>[Called By]<UL><LI><a href="#[14]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART2_IRQHandler
 </UL>
@@ -680,7 +680,7 @@ Global Symbols
 <BR>[Address Reference Count : 1]<UL><LI> startup_mkl25z4.o(.text)
 </UL>
 <P><STRONG><a name="[14]"></a>UART2_IRQHandler</STRONG> (Thumb, 14 bytes, Stack size 8 bytes, main.o(i.UART2_IRQHandler))
-<BR><BR>[Stack]<UL><LI>Max Depth = 92<LI>Call Chain = UART2_IRQHandler &rArr; Serial_ISR &rArr; serial_decoder &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
+<BR><BR>[Stack]<UL><LI>Max Depth = 92<LI>Call Chain = UART2_IRQHandler &rArr; Serial_ISR &rArr; tBrain &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
 </UL>
 <BR>[Calls]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Serial_ISR
 <LI><a href="#[78]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__NVIC_ClearPendingIRQ
@@ -721,7 +721,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[39]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tLED
 </UL>
 
-<P><STRONG><a name="[83]"></a>initGPIO</STRONG> (Thumb, 568 bytes, Stack size 0 bytes, main.o(i.initGPIO))
+<P><STRONG><a name="[83]"></a>initGPIO</STRONG> (Thumb, 608 bytes, Stack size 0 bytes, main.o(i.initGPIO))
 <BR><BR>[Called By]<UL><LI><a href="#[26]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -811,17 +811,6 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[39]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tLED
 </UL>
 
-<P><STRONG><a name="[75]"></a>serial_decoder</STRONG> (Thumb, 174 bytes, Stack size 16 bytes, main.o(i.serial_decoder))
-<BR><BR>[Stack]<UL><LI>Max Depth = 76<LI>Call Chain = serial_decoder &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
-</UL>
-<BR>[Calls]<UL><LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_i2f
-<LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tMotorControl
-<LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;set_speed
-</UL>
-<BR>[Called By]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Serial_ISR
-</UL>
-
 <P><STRONG><a name="[89]"></a>set_speed</STRONG> (Thumb, 74 bytes, Stack size 24 bytes, main.o(i.set_speed))
 <BR><BR>[Stack]<UL><LI>Max Depth = 44<LI>Call Chain = set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
 </UL>
@@ -830,7 +819,7 @@ Global Symbols
 <LI><a href="#[7f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2iz
 </UL>
 <BR>[Called By]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tMotorControl
-<LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;serial_decoder
+<LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tBrain
 </UL>
 
 <P><STRONG><a name="[3a]"></a>tAudio</STRONG> (Thumb, 198 bytes, Stack size 24 bytes, main.o(i.tAudio))
@@ -841,6 +830,17 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
+<P><STRONG><a name="[75]"></a>tBrain</STRONG> (Thumb, 164 bytes, Stack size 16 bytes, main.o(i.tBrain))
+<BR><BR>[Stack]<UL><LI>Max Depth = 76<LI>Call Chain = tBrain &rArr; tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
+</UL>
+<BR>[Calls]<UL><LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_i2f
+<LI><a href="#[45]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tMotorControl
+<LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;set_speed
+</UL>
+<BR>[Called By]<UL><LI><a href="#[74]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Serial_ISR
+</UL>
+
 <P><STRONG><a name="[39]"></a>tLED</STRONG> (Thumb, 362 bytes, Stack size 0 bytes, main.o(i.tLED))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = tLED &rArr; red_led_500ms &rArr; osDelay
 </UL>
@@ -854,14 +854,14 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
 </UL>
-<P><STRONG><a name="[8a]"></a>tMotorControl</STRONG> (Thumb, 424 bytes, Stack size 16 bytes, main.o(i.tMotorControl))
+<P><STRONG><a name="[8a]"></a>tMotorControl</STRONG> (Thumb, 448 bytes, Stack size 16 bytes, main.o(i.tMotorControl))
 <BR><BR>[Stack]<UL><LI>Max Depth = 60<LI>Call Chain = tMotorControl &rArr; set_speed &rArr; __aeabi_ui2f &rArr; _float_epilogue
 </UL>
 <BR>[Calls]<UL><LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;set_speed
 <LI><a href="#[7d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initMotorPWM
 <LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;initMotorGPIO
 </UL>
-<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;serial_decoder
+<BR>[Called By]<UL><LI><a href="#[75]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;tBrain
 </UL>
 <P>
 <H3>
